@@ -1,28 +1,51 @@
 package net.dingsmc.commandapi;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
+import org.bukkit.entity.Player;
 
-public class Command implements TabCompleter {
+import net.md_5.bungee.api.chat.ClickEvent;
+import net.md_5.bungee.api.chat.ClickEvent.Action;
+import net.md_5.bungee.api.chat.ComponentBuilder;
+import net.md_5.bungee.api.chat.HoverEvent;
+
+public class Command {
 
     public List<Command> subcommands = new ArrayList<Command>();
     public String name;
+    public List<String> aliases = new ArrayList<String>();
+    public String description;
     public Command parent;
 
-    public Command(String name, Command parent, Command... subcommands) {
+    public String neededPermission;
+
+    public Command(String name, String description) {
         this.name = name;
-        this.subcommands = Arrays.asList(subcommands);
-        this.parent = parent;
+        this.description = description;
+    }
+
+    public Command addSubcommands(Command... subcommands) {
+        for (Command command : subcommands) {
+            command.parent = this;
+            this.subcommands.add(command);
+        }
+        return this;
+    }
+
+    public Command addAliases(String... aliases) {
+        for (String alias : aliases) {
+            this.aliases.add(alias);
+        }
+        return this;
     }
 
     public final boolean callIntern(CommandSender sender, List<String> args) {
         if(args.size() > 0) {
             for(Command command : subcommands) {
-                if(command.name.equalsIgnoreCase(args.get(0))) {
+                if(command.name.equalsIgnoreCase(args.get(0)) || command.aliases.contains(args.get(0))) {
                     args.remove(0);
                     return command.callIntern(sender, args);
                 }
@@ -36,14 +59,42 @@ public class Command implements TabCompleter {
         return true;
     }
 
-    public void sendHelp(CommandSender sender) {
-        if(parent != null) parent.sendHelp(sender);
+    public final List<String> complete(CommandSender sender, List<String> args) {
+        if(args.size() > 1) {
+            for(Command command : subcommands) {
+                if(command.name.equalsIgnoreCase(args.get(0)) || command.aliases.contains(args.get(0))) {
+                    args.remove(0);
+                    return command.complete(sender, args);
+                }
+            }
+        }
+        return subcommands.stream().map(command -> command.name).filter(n -> args.size() == 0 || n.startsWith(args.get(0))).collect(Collectors.toList());
     }
 
-    @Override
-    public List<String> onTabComplete(CommandSender sender, org.bukkit.command.Command command, String alias,
-            String[] args) {
-        // TODO Auto-generated method stub
-        return null;
+    public void sendHelp(CommandSender sender) {
+        sender.sendMessage("§e---------------------------------");
+        for(Command command : subcommands) {
+            String s = "§e/" + command.getNameWithParent() + " §7- §f" + command.description;
+            if(sender instanceof Player) {
+                ((Player)sender).spigot().sendMessage(new ComponentBuilder(s).event(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new ComponentBuilder("übernehmen").create())).event(new ClickEvent(Action.SUGGEST_COMMAND, "/" + command.getNameWithParent())).create());
+            } else {
+                sender.sendMessage(s);
+            }
+        }
+        sender.sendMessage("§e---------------------------------");
+    }
+
+    public String getNameWithParent() {
+        if(parent != null) return parent.getNameWithParent() + " " + name;
+        return name;
+    }
+
+    public boolean hasPermission(CommandSender sender) {
+        return neededPermission == null || neededPermission == "" || sender.hasPermission(neededPermission);
+    }
+
+    public Command setNeededPermission(String neededPermission) {
+        this.neededPermission = neededPermission;
+        return this;
     }
 }
