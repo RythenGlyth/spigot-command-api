@@ -1,6 +1,6 @@
 name: CommandAPI
 version: 1.0
 author: RythenGlyth
-main: net.dingsmc.commandapi.CommandAPI
+main: net.rythenglyth.commandapi.CommandAPI
 commands:
   test:

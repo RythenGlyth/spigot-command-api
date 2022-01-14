@@ -1,4 +1,4 @@
-package net.dingsmc.commandapi;
+package net.rythenglyth.commandapi;
 
 import java.util.ArrayList;
 import java.util.Arrays;
