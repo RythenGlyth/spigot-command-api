@@ -5,8 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 
-public class Command {
+public class Command implements TabCompleter {
 
     public List<Command> subcommands = new ArrayList<Command>();
     public String name;
@@ -37,5 +38,12 @@ public class Command {
 
     public void sendHelp(CommandSender sender) {
         if(parent != null) parent.sendHelp(sender);
+    }
+
+    @Override
+    public List<String> onTabComplete(CommandSender sender, org.bukkit.command.Command command, String alias,
+            String[] args) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
